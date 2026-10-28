@@ -3,10 +3,12 @@ import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
 
 import { TABS } from '../data/tabs.js';
+import { useLanguage } from '../i18n/LanguageProvider.jsx';
 import TabIcon from './TabIcon.jsx';
 
 export default function Sidebar({ activeTab, onTabChange }) {
   const listRef = useRef(null);
+  const { t } = useLanguage();
 
   useGSAP(
     () => {
@@ -22,17 +24,18 @@ export default function Sidebar({ activeTab, onTabChange }) {
   );
 
   return (
-    <nav className="sidebar" ref={listRef} aria-label="Secciones del portafolio">
+    <nav className="sidebar" ref={listRef} aria-label={t.nav.ariaLabel}>
       <div className="sidebar-brand">
         <span className="brand-mark" aria-hidden="true" />
         <div className="brand-text">
-          <strong>BIENVENIDO</strong>
-          <small>Portafolio interactivo</small>
+          <strong>{t.nav.brand}</strong>
+          <small>{t.nav.brandSubtitle}</small>
         </div>
       </div>
 
       <ul className="nav-list">
         {TABS.map((tab) => {
+          const copy = t.tabs[tab.id] ?? tab;
           const isActive = activeTab === tab.id;
           return (
             <li key={tab.id}>
@@ -46,8 +49,8 @@ export default function Sidebar({ activeTab, onTabChange }) {
                   <TabIcon id={tab.id} />
                 </span>
                 <span className="nav-text">
-                  <strong>{tab.label}</strong>
-                  <small>{tab.hint}</small>
+                  <strong>{copy.label}</strong>
+                  <small>{copy.hint}</small>
                 </span>
               </button>
             </li>
@@ -55,7 +58,7 @@ export default function Sidebar({ activeTab, onTabChange }) {
         })}
       </ul>
 
-      <p className="sidebar-hint">Eleva tu mirada · explora cada constelación</p>
+      <p className="sidebar-hint">{t.nav.hint}</p>
     </nav>
   );
 }

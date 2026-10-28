@@ -1,4 +1,5 @@
 import { TABS } from '../data/tabs.js';
+import { useLanguage } from '../i18n/LanguageProvider.jsx';
 import KnowledgePanel from './panels/KnowledgePanel.jsx';
 import ProjectsPanel from './panels/ProjectsPanel.jsx';
 import TraitsPanel from './panels/TraitsPanel.jsx';
@@ -12,14 +13,16 @@ const PANELS = {
 };
 
 export default function Panel({ activeTab }) {
+  const { t } = useLanguage();
   const tab = TABS.find((item) => item.id === activeTab) ?? TABS[0];
+  const copy = t.tabs[tab.id] ?? tab;
   const Content = PANELS[activeTab] ?? KnowledgePanel;
 
   return (
     <section className="panel" aria-live="polite">
       <header className="panel-header">
-        <span className="panel-kicker">{tab.hint}</span>
-        <h2 className="panel-title">{tab.label}</h2>
+        <span className="panel-kicker">{copy.hint}</span>
+        <h2 className="panel-title">{copy.label}</h2>
         <span className="panel-rule" aria-hidden="true" />
       </header>
 

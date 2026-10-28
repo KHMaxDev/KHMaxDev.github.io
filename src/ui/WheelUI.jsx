@@ -5,6 +5,9 @@ import { InertiaPlugin } from 'gsap/InertiaPlugin';
 import { useGSAP } from '@gsap/react';
 
 import { CATEGORIES, CATEGORY_TECHS } from '../data/categories.js';
+import useIsMobile from '../hooks/useIsMobile.js';
+import { useLanguage } from '../i18n/LanguageProvider.jsx';
+import MobileKnowledge from './MobileKnowledge.jsx';
 
 gsap.registerPlugin(Draggable, InertiaPlugin);
 
@@ -32,6 +35,8 @@ export default function WheelUI({ activeCategory, hoverCategory, onSelect, onHov
   const rotatorRef = useRef(null);
   const techRef = useRef(null);
   const lastHoveredRef = useRef(null);
+  const isMobile = useIsMobile();
+  const { t } = useLanguage();
 
   useEffect(() => {
     if (hoverCategory) lastHoveredRef.current = hoverCategory;
@@ -39,7 +44,7 @@ export default function WheelUI({ activeCategory, hoverCategory, onSelect, onHov
 
   useGSAP(
     () => {
-      if (!rotatorRef.current) return;
+      if (isMobile || !rotatorRef.current) return;
 
       const items = gsap.utils.toArray('.wheel-item', stageRef.current);
 
@@ -53,7 +58,7 @@ export default function WheelUI({ activeCategory, hoverCategory, onSelect, onHov
         });
       };
 
-      Draggable.create(rotatorRef.current, {
+      const draggables = Draggable.create(rotatorRef.current, {
         type: 'rotation',
         inertia: true,
         dragClickables: true,
@@ -61,13 +66,15 @@ export default function WheelUI({ activeCategory, hoverCategory, onSelect, onHov
         onThrowUpdate: keepUpright,
         onThrowComplete: keepUpright,
       });
+
+      return () => draggables.forEach((draggable) => draggable.kill());
     },
-    { scope: stageRef }
+    { scope: stageRef, dependencies: [isMobile] }
   );
 
   useGSAP(
     () => {
-      if (!techRef.current) return;
+      if (isMobile || !techRef.current) return;
 
       gsap.to(techRef.current, {
         autoAlpha: hoverCategory ? 1 : 0,
@@ -77,11 +84,16 @@ export default function WheelUI({ activeCategory, hoverCategory, onSelect, onHov
         ease: hoverCategory ? 'power2.out' : 'power2.in',
       });
     },
-    { dependencies: [hoverCategory], scope: stageRef }
+    { dependencies: [hoverCategory, isMobile], scope: stageRef }
   );
+
+  if (isMobile) {
+    return <MobileKnowledge activeCategory={activeCategory} onSelect={onSelect} />;
+  }
 
   const displayId = hoverCategory ?? lastHoveredRef.current;
   const hovered = CATEGORIES.find((category) => category.id === displayId);
+  const hoveredCopy = hovered ? t.categories[hovered.id] ?? hovered : null;
   const techs = hovered ? CATEGORY_TECHS[hovered.id] : [];
 
   return (
@@ -91,32 +103,36 @@ export default function WheelUI({ activeCategory, hoverCategory, onSelect, onHov
         <div className="wheel-center" aria-hidden="true" />
 
         <div className="wheel-rotator" ref={rotatorRef}>
-          {WHEEL_ITEMS.map((category, index) => (
-            <button
-              key={`${category.id}-${index}`}
-              type="button"
-              className={`wheel-item${activeCategory === category.id ? ' is-active' : ''}`}
-              style={itemStyle(index, category.color)}
-              onClick={() => onSelect(category.id)}
-              onMouseEnter={() => onHover(category.id)}
-              onMouseLeave={() => onHover(null)}
-            >
-              <span className="wheel-item-dot" aria-hidden="true" />
-              <span className="wheel-item-text">
-                <strong>{category.label}</strong>
-                <small>{category.subtitle}</small>
-              </span>
-            </button>
-          ))}
+          {WHEEL_ITEMS.map((category, index) => {
+            const copy = t.categories[category.id] ?? category;
+
+            return (
+              <button
+                key={`${category.id}-${index}`}
+                type="button"
+                className={`wheel-item${activeCategory === category.id ? ' is-active' : ''}`}
+                style={itemStyle(index, category.color)}
+                onClick={() => onSelect(category.id)}
+                onMouseEnter={() => onHover(category.id)}
+                onMouseLeave={() => onHover(null)}
+              >
+                <span className="wheel-item-dot" aria-hidden="true" />
+                <span className="wheel-item-text">
+                  <strong>{copy.label}</strong>
+                  <small>{copy.subtitle}</small>
+                </span>
+              </button>
+            );
+          })}
         </div>
       </div>
 
       <aside className="wheel-tech" ref={techRef} aria-live="polite">
-        {hovered && (
+        {hovered && hoveredCopy && (
           <>
-            <span className="wheel-tech-kicker">Tecnologías</span>
+            <span className="wheel-tech-kicker">{t.ui.technologies}</span>
             <h3 className="wheel-tech-title" style={{ color: hovered.color }}>
-              {hovered.label}
+              {hoveredCopy.label}
             </h3>
             <ul className="wheel-tech-list">
               {techs.map((tech) => (

@@ -5,6 +5,7 @@ import { useGSAP } from '@gsap/react';
 import Sidebar from './Sidebar.jsx';
 import Panel from './Panel.jsx';
 import WheelUI from './WheelUI.jsx';
+import LanguageToggle from './LanguageToggle.jsx';
 
 export default function UIOverlay({
   activeTab,
@@ -54,6 +55,7 @@ export default function UIOverlay({
   return (
     <div className="ui-layer">
       <Sidebar activeTab={activeTab} onTabChange={onTabChange} />
+      <LanguageToggle />
 
       {isKnowledge ? (
         <WheelUI

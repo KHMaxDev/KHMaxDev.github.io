@@ -1,14 +1,14 @@
-import { PROJECTS } from '../../data/portfolio.js';
+import { useLanguage } from '../../i18n/LanguageProvider.jsx';
 
 export default function ProjectsPanel() {
+  const { t } = useLanguage();
+
   return (
     <div className="constellation">
-      <p className="panel-item panel-lead">
-        Cada proyecto es una estrella trazada en mi constelación profesional.
-      </p>
+      <p className="panel-item panel-lead">{t.ui.projectsLead}</p>
 
       <ol className="constellation-list">
-        {PROJECTS.map((project) => (
+        {t.projects.map((project) => (
           <li className="constellation-node panel-item" key={project.name}>
             <span className="constellation-star" aria-hidden="true">
               <span className="constellation-star-core" />
@@ -27,7 +27,7 @@ export default function ProjectsPanel() {
                     <li key={tech}>{tech}</li>
                   ))}
                 </ul>
-                <span className="constellation-rating" aria-label={`${project.stars} de 5 estrellas`}>
+                <span className="constellation-rating" aria-label={t.ui.rating(project.stars)}>
                   {'★'.repeat(project.stars)}
                   <i>{'★'.repeat(5 - project.stars)}</i>
                 </span>

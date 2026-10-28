@@ -1,5 +1,5 @@
 import { Suspense, useEffect, useMemo, useRef } from 'react';
-import { useFrame } from '@react-three/fiber';
+import { useFrame, useThree } from '@react-three/fiber';
 import { Billboard, Line, useTexture } from '@react-three/drei';
 import { gsap } from 'gsap';
 import { useGSAP } from '@gsap/react';
@@ -7,10 +7,13 @@ import * as THREE from 'three';
 
 import { CATEGORIES, TECH_CATEGORY } from '../data/categories.js';
 import { SKILLS } from '../data/portfolio.js';
+import { MOBILE_BREAKPOINT } from '../hooks/useIsMobile.js';
 import ErrorBoundary from './ErrorBoundary.jsx';
 
 const ORIGIN = [0, 1, 0];
+const MOBILE_ORIGIN = [0, 0, 0];
 const SPIN_SPEED = 0.1;
+const MOBILE_SPIN_SPEED = 0.07;
 const BASE_ROTATION = [0.16, 0, -0.07];
 
 function TechLine({ origin, target, color }) {
@@ -102,8 +105,23 @@ export default function SkillOrbs({
 }) {
   const scaleRef = useRef(null);
   const spinRef = useRef(null);
+  const viewportWidth = useThree((state) => state.size.width);
+  const isMobile = viewportWidth <= MOBILE_BREAKPOINT;
 
   const icons = useMemo(() => {
+    if (isMobile) {
+      return SKILLS.map((tech, index) => {
+        const angle = (index / SKILLS.length) * Math.PI * 2;
+
+        return {
+          ...tech,
+          categoryId: TECH_CATEGORY[tech.name] ?? null,
+          position: [Math.cos(angle) * 1.32, Math.sin(angle) * 1.08, 0.3],
+          scale: 0.24,
+        };
+      });
+    }
+
     const counts = [12, 12];
 
     return SKILLS.map((tech, index) => {
@@ -121,7 +139,7 @@ export default function SkillOrbs({
         scale: ring === 0 ? 0.38 : 0.33,
       };
     });
-  }, []);
+  }, [isMobile]);
 
   const isVisible = activeTab === 'knowledge';
   const activeColor = useMemo(
@@ -136,8 +154,13 @@ export default function SkillOrbs({
   useFrame((state, delta) => {
     if (!spinRef.current) return;
 
-    spinRef.current.rotation.y += delta * SPIN_SPEED;
-    spinRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.8) * 0.05;
+    if (isMobile) {
+      spinRef.current.rotation.z += delta * MOBILE_SPIN_SPEED;
+    } else {
+      spinRef.current.rotation.y += delta * SPIN_SPEED;
+    }
+
+    spinRef.current.position.y = Math.sin(state.clock.elapsedTime * 0.8) * 0.04;
   });
 
   useGSAP(
@@ -158,30 +181,32 @@ export default function SkillOrbs({
 
   return (
     <group ref={scaleRef}>
-      <group ref={spinRef} rotation={BASE_ROTATION}>
-        <ErrorBoundary fallback={null}>
-          <Suspense fallback={null}>
-            {icons.map((icon) => (
-              <SkillIcon
-                key={icon.name}
-                icon={icon}
-                isActive={activeCategory === icon.categoryId}
-                isDimmed={activeCategory !== null && activeCategory !== icon.categoryId}
-                onSelect={onSelectCategory}
-                onHover={onHoverCategory}
-              />
-            ))}
+      <group position={isMobile ? [0, 1.15, 0] : [0, 0, 0]}>
+        <group ref={spinRef} rotation={isMobile ? [0, 0, 0] : BASE_ROTATION}>
+          <ErrorBoundary fallback={null}>
+            <Suspense fallback={null}>
+              {icons.map((icon) => (
+                <SkillIcon
+                  key={icon.name}
+                  icon={icon}
+                  isActive={activeCategory === icon.categoryId}
+                  isDimmed={activeCategory !== null && activeCategory !== icon.categoryId}
+                  onSelect={onSelectCategory}
+                  onHover={onHoverCategory}
+                />
+              ))}
 
-            {activeIcons.map((icon) => (
-              <TechLine
-                key={`${activeCategory}-${icon.name}`}
-                origin={ORIGIN}
-                target={icon.position}
-                color={activeColor}
-              />
-            ))}
-          </Suspense>
-        </ErrorBoundary>
+              {activeIcons.map((icon) => (
+                <TechLine
+                  key={`${activeCategory}-${icon.name}`}
+                  origin={isMobile ? MOBILE_ORIGIN : ORIGIN}
+                  target={icon.position}
+                  color={activeColor}
+                />
+              ))}
+            </Suspense>
+          </ErrorBoundary>
+        </group>
       </group>
     </group>
   );
